@@ -1,0 +1,812 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Habit Quest</title>
+
+<style>
+@font-face{
+  font-family:"BoutiqueBitmap";
+  src:url("./Asset/BoutiqueBitmap9x9_1.93.ttf") format("truetype");
+  font-weight:400;
+  font-style:normal;
+  font-display:swap;
+}
+@font-face{
+  font-family:"BoutiqueBitmap";
+  src:url("./Asset/BoutiqueBitmap9x9_Bold_1.93.ttf") format("truetype");
+  font-weight:700;
+  font-style:normal;
+  font-display:swap;
+}
+:root{
+  --ink:#2b1714;
+  --deep:#5b1e16;
+  --red:#a93220;
+  --orange:#e65c27;
+  --amber:#f39a2f;
+  --gold:#ffd15c;
+  --cream:#fff0b8;
+  --paper:#f8d987;
+  --green:#5e9d53;
+  --shadow:#4b2018;
+  --sky:#f08c38;
+}
+*{box-sizing:border-box}
+html{image-rendering:pixelated}
+body{
+  margin:0;
+  min-height:100vh;
+  color:var(--ink);
+  background:
+    linear-gradient(#7a2619 0 8px,transparent 8px),
+    repeating-linear-gradient(90deg,#6a2018 0 32px,#78271b 32px 64px);
+  font-family:"BoutiqueBitmap","Courier New",monospace;
+  letter-spacing:.04em;
+}
+button,input{font:inherit}
+button{cursor:pointer}
+.app{
+  width:min(1180px,calc(100% - 24px));
+  margin:0 auto;
+  padding:18px 0 48px;
+}
+.pixel-frame{
+  border:4px solid var(--ink);
+  box-shadow:
+    0 0 0 4px var(--gold),
+    0 0 0 8px var(--deep),
+    8px 8px 0 8px rgba(43,23,20,.32);
+  background:var(--cream);
+}
+.topbar{
+  display:grid;
+  grid-template-columns:1fr auto;
+  gap:18px;
+  align-items:center;
+  padding:16px 18px;
+  margin:8px 8px 20px;
+  background:linear-gradient(180deg,#c94224 0 50%,#a72d1d 50%);
+  color:#fff6cd;
+  text-shadow:3px 3px 0 #4a1712;
+}
+.logo{
+  font-size:clamp(28px,5vw,54px);
+  line-height:1;
+  font-weight:700;
+}
+.subtitle{
+  margin-top:7px;
+  font-size:14px;
+  color:#ffe79a;
+}
+.hud{
+  display:flex;
+  gap:10px;
+  flex-wrap:wrap;
+  justify-content:flex-end;
+}
+.hud-box{
+  min-width:100px;
+  font-weight:700;
+  padding:9px 12px;
+  color:var(--ink);
+  background:var(--gold);
+  border:3px solid var(--ink);
+  box-shadow:inset -3px -3px 0 #d98a27;
+  text-align:center;
+}
+.layout{
+  display:grid;
+  grid-template-columns:minmax(330px,430px) 1fr;
+  gap:24px;
+  padding:8px;
+}
+.panel-title{
+  display:flex;
+  font-weight:700;
+  justify-content:space-between;
+  align-items:center;
+  gap:12px;
+  padding:10px 12px;
+  background:var(--deep);
+  color:#fff0b8;
+  border-bottom:4px solid var(--ink);
+  text-shadow:2px 2px 0 #240c09;
+}
+.game-panel{overflow:hidden}
+.room{
+  position:relative;
+  height:360px;
+  overflow:hidden;
+  background:#d56b2c;
+}
+#roomCanvas{
+  display:block;
+  width:100%;
+  height:100%;
+  image-rendering:pixelated;
+}
+.speech{
+  position:absolute;
+  left:14px;
+  right:14px;
+  bottom:14px;
+  min-height:70px;
+  padding:12px;
+  background:#fff1bd;
+  border:4px solid var(--ink);
+  box-shadow:inset -4px -4px 0 #dba846;
+  line-height:1.55;
+}
+.speech::before{
+  content:"▶";
+  margin-right:7px;
+  color:var(--red);
+}
+.status-wrap{
+  padding:14px;
+  background:#efbe65;
+  border-top:4px solid var(--ink);
+}
+.stat-line{
+  display:flex;
+  justify-content:space-between;
+  gap:12px;
+  margin-bottom:7px;
+}
+.bar{
+  height:22px;
+  border:3px solid var(--ink);
+  background:#4a211a;
+  padding:3px;
+}
+.bar-fill{
+  height:100%;
+  width:0%;
+  background:repeating-linear-gradient(
+    90deg,
+    #ffd45e 0 12px,
+    #ffb735 12px 24px
+  );
+  transition:width .3s steps(6,end);
+}
+.daily-fill{
+  background:repeating-linear-gradient(
+    90deg,
+    #6eb85e 0 12px,
+    #529746 12px 24px
+  );
+}
+.quest-panel{padding-bottom:16px}
+.progress-box{
+  margin:14px;
+  padding:12px;
+  background:#f5c965;
+  border:3px solid var(--ink);
+  box-shadow:inset -4px -4px 0 #d79638;
+}
+.quest-list{
+  display:flex;
+  flex-direction:column;
+  gap:10px;
+  padding:0 14px;
+}
+.quest{
+  display:grid;
+  grid-template-columns:56px 1fr auto;
+  gap:12px;
+  align-items:center;
+  padding:11px;
+  background:#ffe79a;
+  border:3px solid var(--ink);
+  box-shadow:inset -4px -4px 0 #d69a34;
+  position:relative;
+}
+.quest::before{
+  content:"";
+  position:absolute;
+  inset:3px;
+  border:1px dashed rgba(91,30,22,.35);
+  pointer-events:none;
+}
+.quest.completed{
+  background:#a9c66e;
+  box-shadow:inset -4px -4px 0 #6b934e;
+}
+.quest-icon{
+  width:46px;
+  height:46px;
+  display:grid;
+  place-items:center;
+  font-size:25px;
+  background:#fff2ba;
+  border:3px solid var(--ink);
+  z-index:1;
+}
+.quest-main{z-index:1}
+.quest-name{
+  font-size:18px;
+  font-weight:700;
+  margin-bottom:5px;
+}
+.quest-meta{
+  font-size:12px;
+  color:#6e3427;
+}
+.pixel-btn{
+  border:3px solid var(--ink);
+  font-weight:700;
+  border-radius:0;
+  padding:10px 12px;
+  background:var(--orange);
+  color:#fff8c9;
+  box-shadow:inset -4px -4px 0 #9b321f, 4px 4px 0 #4b2018;
+  text-shadow:2px 2px 0 #7b2619;
+  z-index:1;
+}
+.pixel-btn:hover{filter:brightness(1.08)}
+.pixel-btn:active{
+  transform:translate(3px,3px);
+  box-shadow:inset -3px -3px 0 #9b321f, 1px 1px 0 #4b2018;
+}
+.pixel-btn.secondary{
+  background:#d99b3d;
+  color:#311a14;
+  text-shadow:none;
+  box-shadow:inset -4px -4px 0 #af7029,4px 4px 0 #4b2018;
+}
+.pixel-btn.done{
+  background:#5f9c55;
+  box-shadow:inset -4px -4px 0 #3f6f39,4px 4px 0 #4b2018;
+}
+.actions{
+  display:flex;
+  flex-wrap:wrap;
+  gap:12px;
+  padding:14px;
+}
+.empty{
+  padding:28px 16px;
+  text-align:center;
+  background:#f7d87d;
+  border:3px dashed var(--deep);
+  line-height:1.8;
+}
+.add-box{
+  display:none;
+  margin:0 14px 14px;
+  padding:14px;
+  background:#ffd97a;
+  border:3px solid var(--ink);
+  box-shadow:inset -4px -4px 0 #d69839;
+}
+.add-box.open{display:block}
+.form-grid{
+  display:grid;
+  grid-template-columns:90px 1fr;
+  gap:10px;
+}
+.pixel-input{
+  width:100%;
+  border:3px solid var(--ink);
+  border-radius:0;
+  background:#fff5c9;
+  color:var(--ink);
+  padding:11px;
+  outline:none;
+  box-shadow:inset 3px 3px 0 #dcbf75;
+}
+.pixel-input:focus{background:#fffbe4}
+.tip{
+  padding:0 14px 4px;
+  color:#6d3828;
+  font-size:11px;
+}
+.toast{
+  position:fixed;
+  top:22px;
+  left:50%;
+  transform:translate(-50%,-16px);
+  z-index:50;
+  padding:14px 18px;
+  color:#fff5bd;
+  background:#6a1f18;
+  border:4px solid #24100d;
+  box-shadow:0 0 0 4px #ffc84f,8px 8px 0 rgba(36,16,13,.5);
+  opacity:0;
+  pointer-events:none;
+  transition:.15s steps(3,end);
+}
+.toast.show{opacity:1;transform:translate(-50%,0)}
+.overlay{
+  position:fixed;
+  inset:0;
+  display:none;
+  place-items:center;
+  z-index:60;
+  padding:20px;
+  background:rgba(39,13,10,.72);
+}
+.overlay.show{display:grid}
+.clear-box{
+  width:min(520px,92vw);
+  padding:30px 22px;
+  text-align:center;
+  background:#ffd35a;
+  border:5px solid #2a110d;
+  box-shadow:0 0 0 5px #a72e1e,12px 12px 0 rgba(0,0,0,.35);
+  animation:clearPop .25s steps(4,end);
+}
+@keyframes clearPop{
+  0%{transform:scale(.6)}
+  75%{transform:scale(1.08)}
+  100%{transform:scale(1)}
+}
+.clear-big{
+  font-size:clamp(34px,8vw,64px);
+  font-weight:700;
+  color:#9c291c;
+  text-shadow:4px 4px 0 #fff0a2;
+  margin-bottom:12px;
+}
+.particle{
+  position:fixed;
+  width:10px;
+  height:10px;
+  background:#ffd75e;
+  border:2px solid #6a2018;
+  z-index:70;
+  pointer-events:none;
+  animation:burst .7s steps(7,end) forwards;
+}
+@keyframes burst{
+  to{
+    transform:translate(var(--dx),var(--dy)) rotate(180deg);
+    opacity:0;
+  }
+}
+@media(max-width:850px){
+  .layout{grid-template-columns:1fr}
+  .room{height:330px}
+}
+@media(max-width:560px){
+  .topbar{grid-template-columns:1fr}
+  .hud{justify-content:flex-start}
+  .layout{padding:4px;gap:18px}
+  .quest{grid-template-columns:48px 1fr}
+  .quest .pixel-btn{grid-column:1/-1;width:100%}
+  .form-grid{grid-template-columns:1fr}
+  .room{height:300px}
+}
+</style>
+</head>
+<body>
+<div class="app">
+  <header class="topbar pixel-frame">
+    <div>
+      <div class="logo">HABIT QUEST</div>
+      <div class="subtitle">把每日待辦變成你的冒險任務</div>
+    </div>
+    <div class="hud">
+      <div class="hud-box" id="levelHud">LV.01</div>
+      <div class="hud-box" id="streakHud">STREAK 0</div>
+    </div>
+  </header>
+
+  <main class="layout">
+    <section class="game-panel pixel-frame">
+      <div class="panel-title">
+        <span>PLAYER ROOM</span>
+        <span id="dateLabel"></span>
+      </div>
+
+      <div class="room">
+        <canvas id="roomCanvas" width="384" height="288" aria-label="像素角色房間"></canvas>
+        <div class="speech" id="speech">今天的冒險還沒開始，先新增一個 Quest 吧！</div>
+      </div>
+
+      <div class="status-wrap">
+        <div class="stat-line">
+          <span>EXP</span>
+          <span id="xpText">0 / 100</span>
+        </div>
+        <div class="bar"><div class="bar-fill" id="xpBar"></div></div>
+      </div>
+    </section>
+
+    <section class="quest-panel pixel-frame">
+      <div class="panel-title">
+        <span>QUEST LOG</span>
+        <span id="questCounter">0 / 0</span>
+      </div>
+
+      <div class="progress-box">
+        <div class="stat-line">
+          <span>TODAY PROGRESS</span>
+          <span id="progressText">0%</span>
+        </div>
+        <div class="bar"><div class="bar-fill daily-fill" id="dailyBar"></div></div>
+      </div>
+
+      <div class="quest-list" id="questList"></div>
+
+      <div class="actions">
+        <button class="pixel-btn" id="openAdd">＋ NEW QUEST</button>
+        <button class="pixel-btn secondary" id="resetBtn">RESET TODAY</button>
+      </div>
+
+      <div class="add-box" id="addBox">
+        <div class="form-grid">
+          <input class="pixel-input" id="iconInput" maxlength="2" placeholder="★">
+          <input class="pixel-input" id="nameInput" maxlength="40" placeholder="輸入任務名稱">
+        </div>
+        <div class="actions" style="padding:12px 0 0">
+          <button class="pixel-btn" id="addBtn">ADD QUEST</button>
+          <button class="pixel-btn secondary" id="cancelBtn">CANCEL</button>
+        </div>
+      </div>
+
+      <div class="tip">※ 任務、EXP、等級與連續完成紀錄會儲存在此瀏覽器。</div>
+    </section>
+  </main>
+</div>
+
+<div class="toast" id="toast">QUEST COMPLETE!</div>
+
+<div class="overlay" id="overlay">
+  <div class="clear-box">
+    <div class="clear-big">DAILY CLEAR!</div>
+    <div style="font-size:20px;margin-bottom:8px">ALL QUESTS COMPLETE</div>
+    <div style="margin-bottom:18px">BONUS +50 EXP</div>
+    <button class="pixel-btn" id="closeClear">CONTINUE ▶</button>
+  </div>
+</div>
+
+<script>
+const KEY="habitQuestPixel_v2";
+const XP_PER_QUEST=20;
+const CLEAR_BONUS=50;
+const XP_CAP=100;
+const lines=[
+  "QUEST CLEAR！今天又推進了一格。",
+  "EXP GET！拖延怪受到 20 點傷害。",
+  "做得好，冒險者！下一個 Quest 等著你。",
+  "任務完成！角色看起來更有精神了。",
+  "又收下一個 Quest，繼續前進吧！"
+];
+
+const canvas=document.getElementById("roomCanvas");
+const ctx=canvas.getContext("2d");
+ctx.imageSmoothingEnabled=false;
+
+function today(){
+  const d=new Date();
+  return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,"0")}-${String(d.getDate()).padStart(2,"0")}`;
+}
+function yesterday(){
+  const d=new Date(); d.setDate(d.getDate()-1);
+  return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,"0")}-${String(d.getDate()).padStart(2,"0")}`;
+}
+const base={
+  date:today(),quests:[],xp:0,level:1,streak:0,lastClear:null,bonus:false
+};
+function load(){
+  try{
+    return {...base,...JSON.parse(localStorage.getItem(KEY)||"{}")};
+  }catch(e){return {...base}}
+}
+let state=load();
+
+function save(){localStorage.setItem(KEY,JSON.stringify(state))}
+function syncDay(){
+  if(state.date!==today()){
+    state.date=today();
+    state.quests=[];
+    state.bonus=false;
+    save();
+  }
+}
+syncDay();
+
+function doneCount(){return state.quests.filter(q=>q.done).length}
+function progress(){
+  return state.quests.length?Math.round(doneCount()/state.quests.length*100):0;
+}
+function esc(s){
+  return String(s).replace(/[&<>"']/g,m=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[m]));
+}
+
+function render(){
+  const list=document.getElementById("questList");
+  list.innerHTML="";
+  if(!state.quests.length){
+    list.innerHTML='<div class="empty">NO QUEST YET<br>點擊「NEW QUEST」開始今天的冒險。</div>';
+  }else{
+    state.quests.forEach((q,i)=>{
+      const el=document.createElement("div");
+      el.className="quest"+(q.done?" completed":"");
+      el.innerHTML=`
+        <div class="quest-icon">${esc(q.icon||"★")}</div>
+        <div class="quest-main">
+          <div class="quest-name">${esc(q.name)}</div>
+          <div class="quest-meta">${q.done?"★ QUEST CLEAR ★":"REWARD +20 EXP"}</div>
+        </div>
+        <button class="pixel-btn ${q.done?"done":""}" data-i="${i}" ${q.done?"disabled":""}>
+          ${q.done?"CLEAR":"COMPLETE"}
+        </button>`;
+      list.appendChild(el);
+    });
+  }
+
+  list.querySelectorAll("[data-i]").forEach(btn=>{
+    btn.onclick=()=>complete(Number(btn.dataset.i));
+  });
+
+  const p=progress();
+  document.getElementById("levelHud").textContent="LV."+String(state.level).padStart(2,"0");
+  document.getElementById("streakHud").textContent="STREAK "+state.streak;
+  document.getElementById("questCounter").textContent=doneCount()+" / "+state.quests.length;
+  document.getElementById("progressText").textContent=p+"%";
+  document.getElementById("dailyBar").style.width=p+"%";
+  document.getElementById("xpText").textContent=state.xp+" / "+XP_CAP;
+  document.getElementById("xpBar").style.width=(state.xp/XP_CAP*100)+"%";
+  document.getElementById("dateLabel").textContent=
+    new Intl.DateTimeFormat("zh-TW",{month:"2-digit",day:"2-digit"}).format(new Date());
+
+  setSpeech(p);
+  drawRoom(p,state.level);
+}
+
+function setSpeech(p){
+  let t="今天的冒險還沒開始，先新增一個 Quest 吧！";
+  if(state.quests.length===0) t="任務欄還是空的。冒險者，先決定今天要打倒什麼吧！";
+  else if(p===100) t="完美通關！今天的你成功把所有 Quest 都清掉了！";
+  else if(p>=50) t="已經超過一半了！你的角色正進入戰鬥狀態。";
+  else if(p>0) t="冒險開始了！每完成一個 Quest 都會獲得 EXP。";
+  document.getElementById("speech").textContent=t;
+}
+
+function gainXP(n){
+  state.xp+=n;
+  let levelUp=false;
+  while(state.xp>=XP_CAP){
+    state.xp-=XP_CAP;
+    state.level++;
+    levelUp=true;
+  }
+  save();
+  if(levelUp){
+    toast("LEVEL UP！升到 LV."+state.level+"！");
+    burst(window.innerWidth/2,120,18);
+    beep(740,.08);
+    setTimeout(()=>beep(940,.12),90);
+  }
+}
+
+function complete(i){
+  const q=state.quests[i];
+  if(!q||q.done)return;
+  q.done=true;
+  gainXP(XP_PER_QUEST);
+  save();
+  render();
+  toast(lines[Math.floor(Math.random()*lines.length)]+"  +20 EXP");
+  beep(520,.06); setTimeout(()=>beep(700,.08),70);
+  burst(window.innerWidth*.65,window.innerHeight*.42,12);
+
+  if(state.quests.length && doneCount()===state.quests.length && !state.bonus){
+    setTimeout(clearDay,380);
+  }
+}
+
+function clearDay(){
+  state.bonus=true;
+  if(state.lastClear===yesterday()) state.streak++;
+  else if(state.lastClear!==today()) state.streak=1;
+  state.lastClear=today();
+  gainXP(CLEAR_BONUS);
+  save();
+  render();
+  document.getElementById("overlay").classList.add("show");
+  burst(window.innerWidth/2,window.innerHeight/2,30);
+  beep(620,.08); setTimeout(()=>beep(820,.08),100); setTimeout(()=>beep(1040,.16),210);
+}
+
+function addQuest(){
+  const name=document.getElementById("nameInput").value.trim();
+  const icon=document.getElementById("iconInput").value.trim()||"★";
+  if(!name){toast("請輸入任務名稱！");return}
+  state.quests.push({id:Date.now(),name,icon,done:false});
+  state.bonus=false;
+  save();
+  document.getElementById("nameInput").value="";
+  document.getElementById("iconInput").value="";
+  document.getElementById("addBox").classList.remove("open");
+  render();
+  toast("NEW QUEST ADDED！");
+  beep(420,.06);
+}
+
+function toast(msg){
+  const t=document.getElementById("toast");
+  t.textContent=msg;
+  t.classList.add("show");
+  clearTimeout(toast.timer);
+  toast.timer=setTimeout(()=>t.classList.remove("show"),2200);
+}
+
+function burst(x,y,count){
+  for(let i=0;i<count;i++){
+    const p=document.createElement("div");
+    p.className="particle";
+    p.style.left=(x-5)+"px";
+    p.style.top=(y-5)+"px";
+    const a=Math.random()*Math.PI*2;
+    const d=50+Math.random()*100;
+    p.style.setProperty("--dx",Math.cos(a)*d+"px");
+    p.style.setProperty("--dy",Math.sin(a)*d+"px");
+    p.style.background=["#ffd75e","#ff8b35","#fff0a2","#77af58"][i%4];
+    document.body.appendChild(p);
+    setTimeout(()=>p.remove(),800);
+  }
+}
+
+function beep(freq,duration){
+  try{
+    const ac=new (window.AudioContext||window.webkitAudioContext)();
+    const osc=ac.createOscillator();
+    const gain=ac.createGain();
+    osc.type="square";
+    osc.frequency.value=freq;
+    gain.gain.value=.035;
+    osc.connect(gain); gain.connect(ac.destination);
+    osc.start();
+    gain.gain.exponentialRampToValueAtTime(.001,ac.currentTime+duration);
+    osc.stop(ac.currentTime+duration);
+  }catch(e){}
+}
+
+/* ---------- pixel room + pet drawn without external image assets ---------- */
+function rect(x,y,w,h,c){ctx.fillStyle=c;ctx.fillRect(x,y,w,h)}
+function outlineRect(x,y,w,h,fill,stroke="#2b1714",s=3){
+  rect(x,y,w,h,stroke); rect(x+s,y+s,w-s*2,h-s*2,fill);
+}
+function drawRoom(p,level){
+  const W=384,H=288;
+  ctx.clearRect(0,0,W,H);
+
+  // wall
+  rect(0,0,W,190,"#cf5a2a");
+  for(let y=0;y<190;y+=24){
+    for(let x=(y/24)%2?12:0;x<W;x+=48){
+      rect(x,y,46,22,(x/48+y/24)%2?"#d7652f":"#c85327");
+      rect(x,y+21,46,3,"#a83b22");
+    }
+  }
+  // floor
+  rect(0,190,W,98,"#b45f30");
+  for(let y=190;y<H;y+=24){
+    rect(0,y,W,2,"#74351f");
+    for(let x=0;x<W;x+=48) rect(x+(y%48),y,2,24,"#874322");
+  }
+
+  // window
+  outlineRect(24,28,92,74,"#ffd36e");
+  rect(31,35,78,60,"#7bc0b4");
+  rect(68,35,5,60,"#522319"); rect(31,63,78,5,"#522319");
+  rect(38,44,18,5,"#fff3b4"); rect(46,39,5,18,"#fff3b4");
+
+  // shelf
+  outlineRect(258,34,96,68,"#8f3e22");
+  rect(267,45,18,27,"#e0a53e");
+  rect(290,51,16,21,"#6f9c53");
+  rect(312,42,11,30,"#f2cf63");
+  rect(328,48,16,24,"#c95c2a");
+  rect(264,75,84,5,"#3c1913");
+
+  // desk
+  outlineRect(244,128,110,16,"#9b4b27");
+  rect(254,144,12,58,"#66301c"); rect(334,144,12,58,"#66301c");
+  outlineRect(272,98,52,30,"#f3be54");
+  rect(279,105,38,16,"#6a8b52");
+
+  // bed
+  outlineRect(16,154,116,44,"#83371f");
+  rect(23,161,102,30,"#f1bc58");
+  rect(25,162,42,15,"#fff0ad");
+  rect(18,198,12,20,"#5d2819"); rect(118,198,12,20,"#5d2819");
+
+  // rug
+  rect(133,214,122,48,"#5f2a20");
+  rect(139,220,110,36,"#e7882e");
+  rect(149,228,90,20,"#ffd05d");
+
+  drawPet(190,179,p,level);
+}
+
+function drawPet(cx,ground,p,level){
+  // level-based palette / accessories
+  const body=level>=5?"#f1c84e":"#f28a32";
+  const dark="#6a2419";
+  const light="#ffe07b";
+
+  // shadow
+  rect(cx-34,ground+38,68,8,"rgba(55,24,17,.35)");
+
+  // body/head
+  rect(cx-24,ground-10,48,44,dark);
+  rect(cx-20,ground-6,40,36,body);
+  rect(cx-30,ground-44,60,42,dark);
+  rect(cx-26,ground-40,52,34,body);
+
+  // ears
+  rect(cx-30,ground-52,14,15,dark); rect(cx+16,ground-52,14,15,dark);
+  rect(cx-26,ground-48,8,10,light); rect(cx+18,ground-48,8,10,light);
+
+  // eyes based on progress
+  if(p===0){
+    rect(cx-15,ground-25,10,3,dark); rect(cx+5,ground-25,10,3,dark);
+  }else{
+    rect(cx-15,ground-28,8,9,dark); rect(cx+7,ground-28,8,9,dark);
+    rect(cx-13,ground-27,3,3,"#fff7c2"); rect(cx+9,ground-27,3,3,"#fff7c2");
+  }
+
+  // mouth
+  if(p===100){
+    rect(cx-7,ground-14,14,5,dark);
+    rect(cx-3,ground-10,6,4,"#f05a49");
+  }else{
+    rect(cx-5,ground-14,10,3,dark);
+  }
+
+  // feet
+  rect(cx-21,ground+30,15,8,dark); rect(cx+6,ground+30,15,8,dark);
+
+  // evolution accessories
+  if(level>=3){
+    // headband
+    rect(cx-28,ground-39,56,6,"#b62e20");
+    rect(cx+27,ground-37,12,5,"#ffd45d");
+  }
+  if(level>=5){
+    // tiny sword
+    rect(cx+30,ground-2,5,31,"#d9dfc6");
+    rect(cx+26,ground+18,14,5,dark);
+    rect(cx+31,ground-7,3,7,"#fff6bc");
+  }
+  if(level>=8){
+    // crown
+    rect(cx-18,ground-58,36,12,dark);
+    rect(cx-14,ground-55,28,8,"#ffd35a");
+    rect(cx-14,ground-62,7,9,"#ffd35a");
+    rect(cx-3,ground-66,7,13,"#ffd35a");
+    rect(cx+8,ground-62,7,9,"#ffd35a");
+  }
+
+  // battle sparkle at higher progress
+  if(p>=50){
+    rect(cx-50,ground-28,5,5,"#fff0a0");
+    rect(cx-55,ground-23,15,5,"#fff0a0");
+    rect(cx-50,ground-18,5,5,"#fff0a0");
+  }
+}
+
+document.getElementById("openAdd").onclick=()=>document.getElementById("addBox").classList.toggle("open");
+document.getElementById("cancelBtn").onclick=()=>document.getElementById("addBox").classList.remove("open");
+document.getElementById("addBtn").onclick=addQuest;
+document.getElementById("nameInput").onkeydown=e=>{if(e.key==="Enter")addQuest()};
+document.getElementById("resetBtn").onclick=()=>{
+  if(confirm("要清空今天的 Quest 嗎？EXP、等級與 Streak 會保留。")){
+    state.quests=[];state.bonus=false;save();render();toast("TODAY QUESTS RESET");
+  }
+};
+document.getElementById("closeClear").onclick=()=>{
+  document.getElementById("overlay").classList.remove("show");
+};
+
+render();
+</script>
+</body>
+</html>
